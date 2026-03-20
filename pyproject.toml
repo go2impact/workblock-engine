@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "workblock-engine"
+version = "0.1.0"
+description = "Pure calculation library for transforming activity/keystroke telemetry into workblocks and atomic slices"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Rustan Corpuz", email = "rustanacexd@gmail.com" },
+]
+dependencies = [
+    "polars>=1.30.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/workblock_engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
