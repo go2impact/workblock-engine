@@ -23,7 +23,7 @@ class ActivityCleaner:
         # Handle empty dataframe
         if len(df) == 0 or df.is_empty():
             return pl.DataFrame({
-                col: [] for col in self.required_columns + ["app_exe", "app_filename", "duration_minutes", "task_id"]
+                col: [] for col in self.required_columns + ["start", "end", "exec", "app_exe", "app_filename", "duration_minutes", "task_id"]
             })
 
         # Check for required columns

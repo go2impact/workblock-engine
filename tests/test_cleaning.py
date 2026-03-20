@@ -31,6 +31,7 @@ class TestActivityCleaner:
 
         # Check schema
         expected_columns = ["user_id", "timestamp", "name", "title", "url", "task_name",
+                          "start", "end", "exec",
                           "app_exe", "app_filename", "duration_minutes", "task_id"]
         assert list(result.columns) == expected_columns
         assert len(result) == 0
