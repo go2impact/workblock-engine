@@ -296,6 +296,57 @@ class TestProcess:
         assert result.workblocks["user_id"].unique().sort().to_list() == ["u1"]
         assert result.atomic_slices["user_id"].unique().sort().to_list() == ["u1"]
 
+    @pytest.mark.parametrize("active_minutes", [20, 120])
+    def test_orphan_after_many_regular_slices_preserves_user(self, active_minutes):
+        base = datetime(2026, 1, 1, 9, tzinfo=timezone.utc)
+        activities = pl.DataFrame(
+            {
+                "user_id": ["u1"],
+                "timestamp": [base],
+                "end": [base + timedelta(minutes=active_minutes)],
+                "name": ["chrome.exe"],
+                "title": ["Editor"],
+                "url": ["https://example.com"],
+                "task_name": [""],
+            }
+        )
+        keystrokes = pl.DataFrame(
+            [
+                {
+                    "user_id": "u1",
+                    "timestamp": base + timedelta(minutes=i, seconds=10),
+                    "keystrokes": f"typing{i}",
+                    "app": "chrome.exe",
+                    "exec": "chrome.exe",
+                    "window_title": "Editor",
+                }
+                for i in range(active_minutes)
+            ]
+            + [
+                {
+                    "user_id": "u1",
+                    "timestamp": base + timedelta(minutes=active_minutes + 61 + i),
+                    "keystrokes": f"orphan{i}",
+                    "app": "code.exe",
+                    "exec": "code.exe",
+                    "window_title": "Editor",
+                }
+                for i in range(6)
+            ]
+        )
+
+        result = process(activities, keystrokes)
+
+        assert result.skipped_users == []
+        assert result.workblocks.height == 2
+        regular = result.atomic_slices.filter(~pl.col("is_synthetic"))
+        orphans = result.atomic_slices.filter(pl.col("is_orphan"))
+        assert regular.height == active_minutes
+        assert regular["keystroke_count"].sum() == active_minutes
+        assert orphans.height > 0
+        assert orphans["is_synthetic"].all()
+        assert orphans["synthetic_reason"].unique().to_list() == ["orphaned_keystrokes"]
+
     def test_process_string_timestamps(self):
         """Utf8 timestamps should be coerced to timezone-aware datetimes."""
         activities = pl.DataFrame(
