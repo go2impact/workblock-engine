@@ -160,7 +160,11 @@ def _build_workblocks(
     workblocks_df = (
         pl.DataFrame(workblocks) if workblocks else _empty_workblocks()
     )
-    slices_df = pl.DataFrame(atomic_slices) if atomic_slices else _empty_slices()
+    slices_df = (
+        pl.DataFrame(atomic_slices, infer_schema_length=None)
+        if atomic_slices
+        else _empty_slices()
+    )
     return workblocks_df, slices_df
 
 
