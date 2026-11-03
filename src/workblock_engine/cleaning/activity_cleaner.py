@@ -141,13 +141,18 @@ class ActivityCleaner:
             .select(select_cols + [
                 pl.col("task_id").fill_null("unknown") if "task_id" in df.columns else pl.lit("unknown").alias("task_id")
             ])
-            .sort("user_id", "timestamp")
+            .sort([
+                col for col in [
+                    "user_id", "timestamp", "id", "start", "end", "name",
+                    "title", "url", "task_name", "exec", "task_id",
+                ] if col in df.columns
+            ])
         )
 
         # Deduplicate by ID if ID column exists
         if "id" in df.columns:
             original_count = len(df)
-            df = df.unique(subset=["id"])
+            df = df.unique(subset=["id"], keep="first", maintain_order=True)
             deduped_count = len(df)
             if original_count > deduped_count:
                 print(f"    Removed {original_count - deduped_count} duplicate activities (by ID)")

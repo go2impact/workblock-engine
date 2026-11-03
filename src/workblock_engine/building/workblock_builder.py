@@ -311,9 +311,15 @@ class WorkblockBuilder:
                 ).alias("end")
             )
 
-        activities = activities.sort("start")
+        activities = activities.sort([
+            col for col in ["start", "end", "id", "name", "exec", "title", "url", "task_name"]
+            if col in activities.columns
+        ])
         activities = self._split_activities_by_utc_day(activities)
-        activities = activities.sort("start")
+        activities = activities.sort([
+            col for col in ["start", "end", "id", "name", "exec", "title", "url", "task_name"]
+            if col in activities.columns
+        ])
 
         user_id = activities["user_id"][0] if "user_id" in activities.columns else "unknown"
 
