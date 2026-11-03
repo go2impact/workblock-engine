@@ -727,6 +727,12 @@ The bottleneck is per-user processing (keystroke matching is O(activities × key
 
 ---
 
+## Replay determinism
+
+Reordering the same source rows produces the same workblocks, slices, and raw-keystroke JSON. Cleaning orders records by user, timestamp, source ID when present, and content before keeping the first record for each duplicate source ID. Null values sort first.
+
+Activity overlap resolution orders equal starts by end time, then ID and content, so the longest interval survives. Exact interval ties keep the last record in that order. Keystroke matches with equal scores use the first activity in chronological order. Raw keystrokes with equal times are ordered by ID, app, text, and URL.
+
 ## Development
 
 ```bash

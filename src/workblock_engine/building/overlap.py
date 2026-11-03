@@ -23,7 +23,10 @@ def resolve_activity_overlaps(activities_df: pl.DataFrame) -> pl.DataFrame:
         return activities_df
         
     # Sort by start time to process in chronological order
-    activities_sorted = activities_df.sort("start")
+    activities_sorted = activities_df.sort([
+        col for col in ["start", "end", "id", "name", "exec", "title", "url", "task_name"]
+        if col in activities_df.columns
+    ])
     
     # Get the next activity's start time using shift
     # shift(-1) moves values up by 1 row (next row becomes current row)

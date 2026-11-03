@@ -77,7 +77,12 @@ class KeystrokeCleaner:
                 # Clean window titles
                 pl.col("window_title").str.strip_chars().alias("window_title")
             ])
-            .sort("user_id", "timestamp")
+            .sort([
+                col for col in [
+                    "user_id", "timestamp", "id", "app", "exec", "keystrokes",
+                    "window_title", "url",
+                ] if col in df.columns
+            ])
         )
 
         # Apply keystroke compression
@@ -96,7 +101,7 @@ class KeystrokeCleaner:
         # Deduplicate by ID if ID column exists
         if "id" in df.columns:
             original_count = len(df)
-            df = df.unique(subset=["id"])
+            df = df.unique(subset=["id"], keep="first", maintain_order=True)
             deduped_count = len(df)
             if original_count > deduped_count:
                 print(f"    Removed {original_count - deduped_count} duplicate keystrokes (by ID)")

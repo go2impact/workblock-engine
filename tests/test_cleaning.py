@@ -260,12 +260,11 @@ class TestActivityCleaner:
         cleaner = ActivityCleaner()
         cleaned = cleaner.clean(df)
 
-        # Windows path should extract parent\exe
-        assert cleaned["app_exe"][0] == r"Chrome\chrome.exe"
-        # macOS path should extract parent/exe
-        assert cleaned["app_exe"][1] == "Applications/Microsoft Teams.app"
-        # Null should fall back to name
-        assert cleaned["app_exe"][2] == "Slack"
+        assert dict(zip(cleaned["name"], cleaned["app_exe"])) == {
+            "Chrome": r"Chrome\chrome.exe",
+            "Teams": "Applications/Microsoft Teams.app",
+            "Slack": "Slack",
+        }
 
     def test_column_ordering(self):
         """Test that output columns are in the expected order."""
@@ -487,8 +486,11 @@ class TestAppFilenameNormalization:
         result = cleaner.clean(df)
 
         # Check app_filename normalization
-        expected = ["Go2.exe", "Go2.exe", "Go2.exe", "Chrome.exe", "Chrome.exe", "Chrome.exe"]
-        assert result["app_filename"].to_list() == expected
+        expected = {
+            "Go2": "Go2.exe", "Go2.exe": "Go2.exe", "go2.exe": "Go2.exe",
+            "Chrome": "Chrome.exe", "chrome.exe": "Chrome.exe", "CHROME.EXE": "Chrome.exe",
+        }
+        assert dict(zip(result["name"], result["app_filename"])) == expected
 
     def test_preserve_exec_when_available(self):
         """Test that exec-based app_filename is preserved when exec is available."""
@@ -511,7 +513,9 @@ class TestAppFilenameNormalization:
         result = cleaner.clean(df)
 
         # When exec is available, use the actual filename from path
-        assert result["app_filename"].to_list() == ["chrome.exe", "firefox", "Code.exe"]
+        assert dict(zip(result["name"], result["app_filename"])) == {
+            "Chrome": "chrome.exe", "Firefox": "firefox", "Code": "Code.exe",
+        }
 
     def test_mixed_exec_and_name(self):
         """Test handling of mixed exec and name scenarios."""
@@ -535,12 +539,12 @@ class TestAppFilenameNormalization:
         result = cleaner.clean(df)
 
         # Mix of exec-based and name-based app_filename
-        assert result["app_filename"].to_list() == [
-            "chrome.exe",   # From exec
-            "Firefox.exe",  # Normalized from name
-            "Go2.exe",      # Normalized from name
-            "Slack",        # From exec (Mac app)
-        ]
+        assert dict(zip(result["name"], result["app_filename"])) == {
+            "Chrome": "chrome.exe",
+            "firefox": "Firefox.exe",
+            "Go2": "Go2.exe",
+            "slack": "Slack",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -617,12 +621,11 @@ class TestKeystrokeCleaner:
         result = cleaner.clean(df)
 
         # All data should be preserved
-        assert result["keystrokes"][0] == "user@example.com password123"
-        assert result["keystrokes"][1] == "4111-1111-1111-1111"
-        assert result["keystrokes"][2] == "Normal typing data"
-        assert result["window_title"][0] == "Login Page"
-        assert result["window_title"][1] == "Payment"
-        assert result["window_title"][2] == "Document"
+        assert dict(zip(result["window_title"], result["keystrokes"])) == {
+            "Login Page": "user@example.com password123",
+            "Payment": "4111-1111-1111-1111",
+            "Document": "Normal typing data",
+        }
 
     def test_app_name_extraction(self):
         """Test that app names are extracted from paths."""
@@ -643,9 +646,11 @@ class TestKeystrokeCleaner:
         result = cleaner.clean(df)
 
         # Check app_name extraction
-        assert result["app_name"][0] == "chrome.exe"
-        assert result["app_name"][1] == "Slack.app"
-        assert result["app_name"][2] == "firefox"
+        assert dict(zip(result["app"], result["app_name"])) == {
+            r"C:\Program Files\Chrome\chrome.exe": "chrome.exe",
+            "/Applications/Slack.app": "Slack.app",
+            "firefox": "firefox",
+        }
 
     def test_keystroke_metrics(self):
         """Test keystroke count and duration calculations."""
@@ -687,8 +692,10 @@ class TestKeystrokeCleaner:
         result = cleaner.clean(df)
 
         # Should derive window_title from URL domain
-        assert result["window_title"][0] == "github.com"
-        assert result["window_title"][1] == "Chrome"  # Falls back to app name
+        assert dict(zip(result["url"], result["window_title"])) == {
+            "https://github.com/repo": "github.com",
+            "": "Chrome",
+        }
 
     def test_string_timestamp_conversion(self):
         """Test that string timestamps are converted properly."""

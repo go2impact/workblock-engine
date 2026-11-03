@@ -155,7 +155,7 @@ def join_keystrokes_to_activities(activities_df: pl.DataFrame, keystrokes_df: pl
             # App match
             (pl.col("app_normalized") == pl.col("app_normalized_right"))
         )
-        # Take first match per keystroke (maintains original behavior)
+        .sort(["id", "activity_idx"])
         .group_by("id")
         .first()
     )
@@ -231,7 +231,7 @@ def join_keystrokes_to_activities(activities_df: pl.DataFrame, keystrokes_df: pl
                 ).alias("score")
             ])
             # Get best match per keystroke
-            .sort(["id", "score"])
+            .sort(["id", "score", "activity_idx"])
             .group_by("id")
             .first()
         )
@@ -366,7 +366,9 @@ def join_keystrokes_to_activities(activities_df: pl.DataFrame, keystrokes_df: pl
                         cross_app_count += 1
 
             # Sort by time
-            raw_keystrokes.sort(key=lambda x: x["time"])
+            raw_keystrokes.sort(key=lambda x: (
+                x["time"], str(x.get("id", "")), x["app"], x["text"], x["url"] or ""
+            ))
 
             enriched_activity["keystrokes"] = json.dumps(raw_keystrokes)
             enriched_activity["keystroke_count"] = len(raw_keystrokes)
